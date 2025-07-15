@@ -1,0 +1,5 @@
+# config.py
+
+# Your real bot token and group ID
+BOT_TOKEN = "7974220853:AAE80t4o5-3UpZjRCaGDnnRcIMb0ZKbtXrk"
+GROUP_ID = "-1002824996503"
