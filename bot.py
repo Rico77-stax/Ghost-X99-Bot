@@ -1,32 +1,30 @@
-import telebot
+# bot.py
 import os
-from signal_engine import analyze_chart
+import telegram
+from telegram.ext import Updater, MessageHandler, Filters
+from signal_engine import analyze_chart_and_generate_signal
+from utils import download_image
+from config import BOT_TOKEN, GROUP_ID
 
-TOKEN = os.getenv("BOT_TOKEN")
-GROUP_ID = int(os.getenv("GROUP_ID"))
-bot = telebot.TeleBot(TOKEN)
-
-@bot.message_handler(content_types=['photo'])
-def handle_photo(message):
-    if message.chat.id != GROUP_ID:
-        return
-
-    file_info = bot.get_file(message.photo[-1].file_id)
-    downloaded_file = bot.download_file(file_info.file_path)
-    file_path = f"temp/{file_info.file_id}.jpg"
-
-    with open(file_path, 'wb') as new_file:
-        new_file.write(downloaded_file)
-
-    result_text, marked_image_path = analyze_chart(file_path)
-
-    bot.send_message(GROUP_ID, result_text)
-    with open(marked_image_path, 'rb') as img:
-        bot.send_photo(GROUP_ID, img)
-
-    os.remove(file_path)
-    os.remove(marked_image_path)
+def handle_image(update, context):
+    try:
+        chat_id = update.message.chat_id
+        if str(chat_id) != GROUP_ID:
+            return
+        
+        photo_file = update.message.photo[-1].get_file()
+        image_path = download_image(photo_file)
+        
+        result = analyze_chart_and_generate_signal(image_path)
+        context.bot.send_message(chat_id=chat_id, text=result["text"])
+        context.bot.send_photo(chat_id=chat_id, photo=open(result["image_path"], "rb"))
+        
+    except Exception as e:
+        context.bot.send_message(chat_id=chat_id, text=f"⚠️ Error: {str(e)}")
 
 def start_bot():
-    print("Bot running...")
-    bot.polling()
+    updater = Updater(token=BOT_TOKEN, use_context=True)
+    dp = updater.dispatcher
+    dp.add_handler(MessageHandler(Filters.photo, handle_image))
+    updater.start_polling()
+    updater.idle()
