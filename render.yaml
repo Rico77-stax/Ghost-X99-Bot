@@ -1,8 +1,0 @@
-services:
-  - type: web
-    name: ghost-x99-bot
-    runtime: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: python main.py
-    env: python
-    plan: free
