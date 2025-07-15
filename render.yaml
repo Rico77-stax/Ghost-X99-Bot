@@ -1,11 +1,11 @@
 services:
   - type: web
-    name: ghost-x99
+    name: ghost-x99-bot
     env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "python main.py"
+    buildCommand: ""
+    startCommand: gunicorn main:app
     envVars:
-      - key: TELEGRAM_TOKEN
+      - key: TELEGRAM_BOT_TOKEN
         value: 7974220853:AAE80t4o5-3UpZjRCaGDnnRcIMb0ZKbtXrk
-      - key: GROUP_ID
-        value: "-1002824996503"
+      - key: TELEGRAM_GROUP_ID
+        value: -1002824996503
