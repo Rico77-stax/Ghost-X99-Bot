@@ -89,4 +89,52 @@ if structure['price_action_zone']:
 
 # Final decision placeholder (actual decision made in signal_engine)
 return results
+sniper_logics.py
+
+import numpy as np
+
+Helper logic blocks
+
+def is_perfect_buy_stack(emas): return emas == sorted(emas)
+
+def is_perfect_sell_stack(emas): return emas == sorted(emas, reverse=True)
+
+def fibonacci_levels(high, low): diff = high - low return { '61.8': high - diff * 0.618, '78.6': high - diff * 0.786, '100': high, '0': low }
+
+def determine_sniper_signal(prices, emas, rsi, fib_levels, structure): current_price = prices[-1] signal = None explanation = []
+
+if structure == "break_retest_buy" and is_perfect_buy_stack(emas):
+    if fib_levels['61.8'] <= current_price <= fib_levels['78.6']:
+        signal = "Buy Limit"
+        explanation.append("Price retracing to golden zone (Fib 61.8-78.6)")
+    else:
+        signal = "Buy"
+        explanation.append("Structure break and EMAs in bullish stack")
+
+elif structure == "break_retest_sell" and is_perfect_sell_stack(emas):
+    if fib_levels['61.8'] >= current_price >= fib_levels['78.6']:
+        signal = "Sell Limit"
+        explanation.append("Price retracing to golden zone (Fib 61.8-78.6)")
+    else:
+        signal = "Sell"
+        explanation.append("Structure break and EMAs in bearish stack")
+
+elif structure == "consolidation_above_support":
+    signal = "Buy Stop"
+    explanation.append("Consolidation near resistance. Possible breakout.")
+
+elif structure == "consolidation_below_resistance":
+    signal = "Sell Stop"
+    explanation.append("Consolidation near support. Possible breakdown.")
+
+else:
+    signal = "No clear signal"
+    explanation.append("No strong confluence detected.")
+
+return signal, explanation
+
+def calculate_tp_sl(signal, current_price): if signal in ["Buy", "Buy Limit", "Buy Stop"]: tp = round(current_price + (current_price * 0.015), 2) sl = round(current_price - (current_price * 0.01), 2) elif signal in ["Sell", "Sell Limit", "Sell Stop"]: tp = round(current_price - (current_price * 0.015), 2) sl = round(current_price + (current_price * 0.01), 2) else: tp = sl = current_price return tp, sl
+
+def sniper_logic_engine(current_price, price_data, ema_data, rsi_data, fib_high, fib_low, market_structure): fib_levels = fibonacci_levels(fib_high, fib_low) signal, explanation = determine_sniper_signal(price_data, ema_data, rsi_data, fib_levels, market_structure) tp, sl = calculate_tp_sl(signal, current_price) return signal, tp, sl, explanation
+
 
