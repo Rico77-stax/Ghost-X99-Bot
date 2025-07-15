@@ -1,47 +1,74 @@
 import os
 import logging
-from telegram import Bot, Update
-from telegram.ext import Updater, MessageHandler, Filters, CallbackContext
-from signal_engine import analyze_chart_and_generate_signal
-
-# ✅ Your real bot credentials
-TELEGRAM_BOT_TOKEN = "7974220853:AAE80t4o5-3UpZjRCaGDnnRcIMb0ZKbtXrk"
-TELEGRAM_GROUP_ID = -1002824996503
-
-# ✅ Logging for debug
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+from telegram import Update, InputFile
+from telegram.ext import (
+    ApplicationBuilder, MessageHandler, filters, ContextTypes
 )
+from config import BOT_TOKEN, GROUP_ID
+from image_processor import extract_price_from_image, annotate_image
+from signal_engine import generate_signal
+import shutil
 
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
-# ✅ This function is triggered when a screenshot/image is sent
-def handle_image(update: Update, context: CallbackContext):
+# Store last annotated file to delete on next signal
+LAST_IMAGE = None
+
+async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global LAST_IMAGE
+
+    if update.effective_chat.id != GROUP_ID:
+        return
+
+    photo = update.message.photo[-1]
+    file = await context.bot.get_file(photo.file_id)
+    file_path = f"downloads/{photo.file_id}.png"
+    await file.download_to_drive(file_path)
+
     try:
-        photo_file = update.message.photo[-1].get_file()
-        image_path = "latest_chart.png"
-        photo_file.download(image_path)
-        update.message.reply_text("🧠 Processing chart... Please wait ⏳")
+        current_price = extract_price_from_image(file_path)
+        signal_data = generate_signal(file_path, current_price)
 
-        # Analyze chart
-        signal_text, annotated_image_path = analyze_chart_and_generate_signal(image_path)
+        if LAST_IMAGE:
+            try:
+                await context.bot.delete_message(chat_id=GROUP_ID, message_id=LAST_IMAGE)
+            except:
+                pass
 
-        # Send result
-        context.bot.send_photo(chat_id=update.effective_chat.id, photo=open(annotated_image_path, 'rb'), caption=signal_text)
+        annotated_path = annotate_image(file_path, signal_data['signal'], signal_data['entry'], signal_data['tp'], signal_data['sl'])
+
+        caption = f"""
+📡 *Quantum Ghost X99 – Vortex Signal*
+
+📈 *Signal:* {signal_data['signal']}
+🎯 *Entry:* {signal_data['entry']}
+🎯 *TP:* {signal_data['tp']}
+🛡 *SL:* {signal_data['sl']}
+🧠 *Reason:* {signal_data['reason']}
+        """.strip()
+
+        sent = await context.bot.send_photo(
+            chat_id=GROUP_ID,
+            photo=InputFile(annotated_path),
+            caption=caption,
+            parse_mode="Markdown"
+        )
+
+        LAST_IMAGE = sent.message_id
 
     except Exception as e:
-        logger.error(f"❌ Error handling image: {e}")
-        update.message.reply_text("⚠️ An error occurred while analyzing the chart. Please try again.")
+        logging.error(f"Error processing image: {e}")
+        await update.message.reply_text("⚠️ Error analyzing screenshot. Make sure it’s a clear MT4/MT5 chart.")
 
-# ✅ Start the bot
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        if os.path.exists(annotated_path):
+            os.remove(annotated_path)
+
 def start_bot():
-    bot = Bot(token=TELEGRAM_BOT_TOKEN)
-    updater = Updater(bot.token, use_context=True)
-    dispatcher = updater.dispatcher
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 
-    dispatcher.add_handler(MessageHandler(Filters.photo, handle_image))
-
-    updater.start_polling()
-    print("🤖 Ghost X99 Bot is now running...")
-    updater.idle()
+    logging.info("Bot is running...")
+    app.run_polling()
