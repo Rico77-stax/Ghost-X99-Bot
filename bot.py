@@ -1,47 +1,47 @@
-# bot.py
-
 import os
-import telebot
-from config import BOT_TOKEN, TELEGRAM_GROUP_ID, SCREENSHOT_DIR
-from signal_engine import analyze_chart_image
-from utils import cleanup_old_images
+import logging
+from telegram import Bot, Update
+from telegram.ext import Updater, MessageHandler, Filters, CallbackContext
+from signal_engine import analyze_chart_and_generate_signal
 
-# Initialize bot
-bot = telebot.TeleBot(BOT_TOKEN)
+# ✅ Your real bot credentials
+TELEGRAM_BOT_TOKEN = "7974220853:AAE80t4o5-3UpZjRCaGDnnRcIMb0ZKbtXrk"
+TELEGRAM_GROUP_ID = -1002824996503
 
-# Ensure screenshot directory exists
-os.makedirs(SCREENSHOT_DIR, exist_ok=True)
+# ✅ Logging for debug
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 
-# 🖼️ Handle incoming photo messages
-@bot.message_handler(content_types=["photo"])
-def handle_screenshot(message):
-    chat_id = message.chat.id
-    if chat_id != TELEGRAM_GROUP_ID:
-        bot.reply_to(message, "⚠️ Sorry, this bot only works in the authorized group.")
-        return
+logger = logging.getLogger(__name__)
 
-    cleanup_old_images()
-
-    # Save the image
-    file_info = bot.get_file(message.photo[-1].file_id)
-    downloaded_file = bot.download_file(file_info.file_path)
-
-    filename = os.path.join(SCREENSHOT_DIR, f"chart_{message.message_id}.jpg")
-    with open(filename, 'wb') as f:
-        f.write(downloaded_file)
-
-    # Analyze and get signal
+# ✅ This function is triggered when a screenshot/image is sent
+def handle_image(update: Update, context: CallbackContext):
     try:
-        signal_result, annotated_image_path = analyze_chart_image(filename)
-        if signal_result:
-            with open(annotated_image_path, 'rb') as photo:
-                bot.send_photo(chat_id, photo, caption=signal_result)
-        else:
-            bot.send_message(chat_id, "📉 No valid signal found based on the sniper logics.")
-    except Exception as e:
-        bot.send_message(chat_id, f"❌ Error processing screenshot: {str(e)}")
+        photo_file = update.message.photo[-1].get_file()
+        image_path = "latest_chart.png"
+        photo_file.download(image_path)
+        update.message.reply_text("🧠 Processing chart... Please wait ⏳")
 
-# ✅ Start bot polling
-def run_bot():
-    print("🤖 Ghost X99 Bot is running...")
-    bot.infinity_polling()
+        # Analyze chart
+        signal_text, annotated_image_path = analyze_chart_and_generate_signal(image_path)
+
+        # Send result
+        context.bot.send_photo(chat_id=update.effective_chat.id, photo=open(annotated_image_path, 'rb'), caption=signal_text)
+
+    except Exception as e:
+        logger.error(f"❌ Error handling image: {e}")
+        update.message.reply_text("⚠️ An error occurred while analyzing the chart. Please try again.")
+
+# ✅ Start the bot
+def start_bot():
+    bot = Bot(token=TELEGRAM_BOT_TOKEN)
+    updater = Updater(bot.token, use_context=True)
+    dispatcher = updater.dispatcher
+
+    dispatcher.add_handler(MessageHandler(Filters.photo, handle_image))
+
+    updater.start_polling()
+    print("🤖 Ghost X99 Bot is now running...")
+    updater.idle()
