@@ -1,23 +1,39 @@
-# utils.py
-
 import os
-import requests
-from datetime import datetime
+import glob
 
-def download_image(file_url, bot_token):
-    try:
-        now = datetime.now().strftime("%Y%m%d_%H%M%S")
-        file_path = f"screenshots/chart_{now}.jpg"
-        
-        response = requests.get(file_url)
-        if response.status_code == 200:
-            os.makedirs("screenshots", exist_ok=True)
-            with open(file_path, "wb") as f:
-                f.write(response.content)
-            return file_path
-        else:
-            print(f"Failed to download image: {response.status_code}")
-            return None
-    except Exception as e:
-        print(f"Error downloading image: {e}")
-        return None
+def calculate_tp_sl(entry, direction, spread=0.0, pip_size=0.01, reward=2, risk=1):
+    """
+    Calculates TP and SL based on standard R:R ratio logic.
+    Automatically adapts to instrument pip size.
+    """
+    if direction.lower() in ["buy", "buy stop", "buy limit"]:
+        sl = round(entry - (risk * pip_size), 2)
+        tp = round(entry + (reward * pip_size), 2)
+    else:
+        sl = round(entry + (risk * pip_size), 2)
+        tp = round(entry - (reward * pip_size), 2)
+
+    return tp, sl
+
+def get_pip_size(symbol_name):
+    """
+    Assigns pip size based on instrument class.
+    """
+    symbol_name = symbol_name.lower()
+    if "gold" in symbol_name or "xau" in symbol_name:
+        return 1.0
+    elif "us30" in symbol_name or "nas100" in symbol_name or "ger30" in symbol_name:
+        return 10.0
+    elif "btc" in symbol_name or "eth" in symbol_name:
+        return 5.0
+    else:  # Forex pairs like EURUSD, GBPUSD, etc.
+        return 0.0001
+
+def clear_old_images(directory="./", extension="png"):
+    """
+    Automatically deletes previously analyzed images to prevent duplicate signals.
+    """
+    files = glob.glob(os.path.join(directory, f"*.{extension}"))
+    for file in files:
+        if "_marked" not in file:  # Preserve marked results
+            os.remove(file)
