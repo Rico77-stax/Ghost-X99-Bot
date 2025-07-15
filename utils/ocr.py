@@ -1,15 +1,23 @@
-import pytesseract
-from PIL import Image
+# utils.py
 
-def extract_price_from_image(image_path):
-    image = Image.open(image_path)
-    text = pytesseract.image_to_string(image)
-    # Extract price (custom logic here)
-    lines = text.split('\n')
-    for line in lines:
-        if any(char.isdigit() for char in line):
-            try:
-                return float(line.replace(',', '').strip())
-            except:
-                continue
-    return 0.0
+import os
+import requests
+from datetime import datetime
+
+def download_image(file_url, bot_token):
+    try:
+        now = datetime.now().strftime("%Y%m%d_%H%M%S")
+        file_path = f"screenshots/chart_{now}.jpg"
+        
+        response = requests.get(file_url)
+        if response.status_code == 200:
+            os.makedirs("screenshots", exist_ok=True)
+            with open(file_path, "wb") as f:
+                f.write(response.content)
+            return file_path
+        else:
+            print(f"Failed to download image: {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"Error downloading image: {e}")
+        return None
