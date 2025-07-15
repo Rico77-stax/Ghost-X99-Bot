@@ -1,7 +1,10 @@
-python-telegram-bot==13.15
+python-telegram-bot==20.3
 opencv-python
-numpy
-pillow
-easyocr
+pytesseract
+Pillow
 matplotlib
+numpy
 scikit-image
+scikit-learn
+pandas
+requests
