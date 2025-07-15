@@ -1,7 +1,0 @@
-services:
-  - type: web
-    name: ghost-x99-bot
-    runtime: python
-    buildCommand: ""
-    startCommand: python main.py
-    plan: free
