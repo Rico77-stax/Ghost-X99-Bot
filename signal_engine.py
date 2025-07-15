@@ -1,94 +1,57 @@
-signal_engine.py
+# signal_engine.py
 
-import cv2 import numpy as np import pytesseract from PIL import Image
+import cv2
+import numpy as np
+import pytesseract
+from utils import draw_markup, detect_candles, get_latest_price_zone, extract_text_data
+from sniper_logics import apply_all_sniper_logics
+from logic_utils import calculate_tp_sl, get_timeframe_from_filename
 
-=== PRE-DEFINED SNIPER LOGIC PLACEHOLDERS ===
+def analyze_chart_image(image_path):
+    # Step 1: Load image and preprocess
+    image = cv2.imread(image_path)
+    if image is None:
+        raise ValueError("Image could not be loaded.")
 
-These will all be upgraded into real logic blocks
+    # Step 2: Extract chart text using OCR
+    ocr_text = extract_text_data(image)
+    
+    # Step 3: Detect candles and market structure from image
+    candles = detect_candles(image)
+    if not candles or len(candles) < 10:
+        return None, None
 
-Currently act as layout + examples for the Quantum X99 Engine
+    # Step 4: Get most recent price zone (last visible area)
+    latest_price = get_latest_price_zone(candles)
 
-def extract_current_price(image_path): """ Use OCR to detect the last visible price on the right edge of the screenshot. This is the anchor for all trade decisions. """ try: image = cv2.imread(image_path) gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) h, w = gray.shape
+    # Step 5: Detect timeframe (M15, M30, H1)
+    timeframe = get_timeframe_from_filename(image_path)
 
-# Crop right edge price zone
-    price_zone = gray[0:h, int(w*0.85):w] 
-    text = pytesseract.image_to_string(price_zone)
+    # Step 6: Apply full sniper logic system (36+ strategies)
+    signal_data = apply_all_sniper_logics(candles, ocr_text, latest_price, timeframe)
 
-    # Extract price-like values
-    lines = text.split("\n")
-    prices = [line for line in lines if any(c.isdigit() for c in line)]
+    if not signal_data:
+        return None, None
 
-    # Use last price as anchor
-    for val in reversed(prices):
-        try:
-            return float(val.replace(',', '').replace(' ', ''))
-        except:
-            continue
-    return None
-except Exception as e:
-    print("OCR error:", e)
-    return None
+    # Step 7: Calculate TP & SL based on price action + fib + sniper system
+    tp, sl = calculate_tp_sl(signal_data, candles)
 
-def detect_sniper_signal(image_path, current_price): """ Apply your full sniper logic. Return dict with signal, entry, SL, TP, reason. """ # === SAMPLE STRATEGY STRUCTURE === # You will expand each of these blocks with real image analysis logic
+    # Step 8: Draw markup (annotated image)
+    annotated_image_path = draw_markup(image_path, signal_data, tp, sl)
 
-confluences = []
+    # Step 9: Prepare final output message
+    signal_text = f"""
+🔮 *Ghost X99 – Vortex Sniper Signal*
 
-# --- 1. Support / Resistance ---
-sr_zone = True  # placeholder
-if sr_zone:
-    confluences.append("Support/Resistance zone")
+🕒 Timeframe: {timeframe}
+📍 Entry: `{signal_data['entry']}`
+🎯 TP: `{tp}`
+🛑 SL: `{sl}`
+📊 Type: *{signal_data['type']}*
 
-# --- 2. Break & Retest ---
-br_confirm = True  # placeholder
-if br_confirm:
-    confluences.append("Break & Retest")
+🧠 Reason: {signal_data['reason']}
 
-# --- 3. Smart Money Concepts ---
-smc_logic = True  # placeholder
-if smc_logic:
-    confluences.append("SMC/Order Block")
+⚠️ Signal is based on screenshot's latest price action.
+    """.strip()
 
-# --- 4. Fibonacci Pullback ---
-fibo_match = True  # placeholder
-if fibo_match:
-    confluences.append("Fib 61.8% Rejection")
-
-# --- 5. Trend & EMA Stack (not 7/13/21) ---
-ema_stack_bull = True  # placeholder
-if ema_stack_bull:
-    confluences.append("EMA Bull Stack: 3>5>8>13>21>50>200")
-
-# --- 6. Divergence / Trap Zones ---
-trap_zone = True  # placeholder
-if trap_zone:
-    confluences.append("Trap zone & divergence")
-
-# Determine signal type based on example confluences
-signal_type = "Buy Limit"
-entry = round(current_price - 20, 2)
-sl = round(entry - 40, 2)
-tp = round(entry + 80, 2)
-
-reason = " | ".join(confluences[:3])  # just 3 confluences shown
-
-return {
-    "signal": signal_type,
-    "entry": entry,
-    "tp": tp,
-    "sl": sl,
-    "reason": reason
-}
-
-def annotate_chart(image_path, signal_data): """ Draw signal and levels on the image. """ image = cv2.imread(image_path) h, w, _ = image.shape
-
-# Add lines
-cv2.line(image, (0, int(h/2)), (w, int(h/2)), (255,255,255), 2)
-
-# Add label
-label = f"{signal_data['signal']} | Entry: {signal_data['entry']} | TP: {signal_data['tp']} | SL: {signal_data['sl']}"
-cv2.putText(image, label, (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,255,0), 2)
-
-output_path = image_path.replace(".jpg", "_annotated.jpg")
-cv2.imwrite(output_path, image)
-return output_path
-
+    return signal_text, annotated_image_path
