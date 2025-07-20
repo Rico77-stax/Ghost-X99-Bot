@@ -1,198 +1,228 @@
-def apply_sniper_logics(price):
-    logics = [
-        trend_breakout_logic,
-        support_resistance_bounce,
-        psychological_level_rejection,
-        fibonacci_retrace_confluence,
-        ema_cross_strategy,
-        macd_cross_signal,
-        rsi_overbought_oversold,
-        bollinger_band_squeeze,
-        stochastic_reversal,
-        ichimoku_cloud_signal,
-        adx_trend_strength,
-        cci_mean_reversion,
-        pivot_point_strategy,
-        supply_demand_zone,
-        volume_surge_entry,
-        candle_engulfing_signal,
-        hammer_doji_confirmation,
-        three_white_soldiers_crows,
-        inside_bar_breakout,
-        tweezer_top_bottom,
-        morning_evening_star,
-        triple_tap_pattern,
-        head_shoulders_pattern,
-        cup_handle_breakout,
-        breakout_retreat_trap,
-        trendline_touch_bounce,
-        moving_average_retest,
-        rsi_divergence,
-        macd_histogram_shift,
-        order_block_detection,
-        market_structure_shift,
-        higher_highs_lows,
-        fair_value_gap_logic,
-        smart_money_trap,
-        liquidity_sweep_logic,
-        fractal_energy_signal
-    ]
+import cv2
+import numpy as np
 
-    for logic in logics:
-        result = logic(price)
-        if result:
-            return result
+def apply_all_sniper_logics(img):
+    resized = cv2.resize(img, (640, 480))
+    logic_results = []
 
-    return {
-        "signal": "NO SIGNAL",
-        "entry": price,
-        "tp": price + 20,
-        "sl": price - 20,
-        "reasoning": "No sniper logic matched. Default safety zone used."
-    }
+    # 1. Order Blocks
+    if detect_order_block(resized):
+        logic_results.append("OB")
 
-# === Below are 36 sniper logic placeholder implementations ===
+    # 2. Fair Value Gaps
+    if detect_fvg(resized):
+        logic_results.append("FVG")
 
-def trend_breakout_logic(price):
-    if int(price) % 15 == 0:
-        return {"signal": "BUY STOP", "entry": price + 5, "tp": price + 25, "sl": price - 15, "reasoning": "Trend breakout detected"}
+    # 3. Liquidity Grab
+    if detect_liquidity_grab(resized):
+        logic_results.append("Liquidity Grab")
 
-def support_resistance_bounce(price):
-    if int(price) % 10 == 1:
-        return {"signal": "SELL", "entry": price, "tp": price - 20, "sl": price + 10, "reasoning": "Resistance bounce confirmation"}
+    # 4. Breaker Blocks
+    if detect_breaker_block(resized):
+        logic_results.append("Breaker Block")
 
-def psychological_level_rejection(price):
-    if round(price, 2) % 100 == 0:
-        return {"signal": "SELL LIMIT", "entry": price, "tp": price - 30, "sl": price + 20, "reasoning": "Psychological level rejection"}
+    # 5. Trendline Breakout
+    if detect_trendline_break(resized):
+        logic_results.append("Trendline Break")
 
-def fibonacci_retrace_confluence(price):
-    if int(price * 0.618) % 2 == 0:
-        return {"signal": "BUY", "entry": price, "tp": price + 40, "sl": price - 25, "reasoning": "Fib retracement with confluence"}
+    # 6. Double Top/Bottom
+    if detect_double_top_bottom(resized):
+        logic_results.append("Double Top/Bottom")
 
-def ema_cross_strategy(price):
-    if int(price) % 3 == 0:
-        return {"signal": "BUY", "entry": price + 1, "tp": price + 20, "sl": price - 10, "reasoning": "EMA cross detected"}
+    # 7. EMA Cross
+    if detect_ema_cross(resized):
+        logic_results.append("EMA Cross")
 
-def macd_cross_signal(price):
-    if int(price) % 4 == 0:
-        return {"signal": "SELL", "entry": price - 1, "tp": price - 25, "sl": price + 15, "reasoning": "MACD bearish cross"}
+    # 8. Candlestick Pattern
+    if detect_candlestick_pattern(resized):
+        logic_results.append("Candle Pattern")
 
-def rsi_overbought_oversold(price):
-    if int(price) % 5 == 0:
-        return {"signal": "BUY", "entry": price, "tp": price + 30, "sl": price - 10, "reasoning": "RSI oversold bounce"}
+    # 9. Rejection Wicks
+    if detect_rejection_wick(resized):
+        logic_results.append("Rejection Wick")
 
-def bollinger_band_squeeze(price):
-    if int(price) % 6 == 0:
-        return {"signal": "BUY STOP", "entry": price + 2, "tp": price + 22, "sl": price - 8, "reasoning": "Bollinger Band squeeze breakout"}
+    # 10. Inside Bar Setup
+    if detect_inside_bar(resized):
+        logic_results.append("Inside Bar")
 
-def stochastic_reversal(price):
-    if int(price) % 7 == 0:
-        return {"signal": "SELL LIMIT", "entry": price, "tp": price - 20, "sl": price + 15, "reasoning": "Stochastic reversal zone"}
+    # 11. Break of Structure (BOS)
+    if detect_bos(resized):
+        logic_results.append("BOS")
 
-def ichimoku_cloud_signal(price):
-    if int(price) % 8 == 0:
-        return {"signal": "BUY", "entry": price + 1, "tp": price + 25, "sl": price - 10, "reasoning": "Price broke above cloud"}
+    # 12. Change of Character (CHOCH)
+    if detect_choch(resized):
+        logic_results.append("CHOCH")
 
-def adx_trend_strength(price):
-    if int(price) % 9 == 0:
-        return {"signal": "BUY", "entry": price, "tp": price + 30, "sl": price - 20, "reasoning": "Strong ADX trend detected"}
+    # 13. Fibonacci Confluence
+    if detect_fibonacci_zone(resized):
+        logic_results.append("Fibo Confluence")
 
-def cci_mean_reversion(price):
-    if int(price) % 11 == 0:
-        return {"signal": "SELL", "entry": price, "tp": price - 20, "sl": price + 15, "reasoning": "CCI mean reversion setup"}
+    # 14. Institutional Candle
+    if detect_institutional_candle(resized):
+        logic_results.append("Institutional Candle")
 
-def pivot_point_strategy(price):
-    if int(price) % 12 == 0:
-        return {"signal": "BUY LIMIT", "entry": price - 1, "tp": price + 25, "sl": price - 10, "reasoning": "Pivot bounce"}
+    # 15. Imbalance Zone
+    if detect_imbalance(resized):
+        logic_results.append("Imbalance")
 
-def supply_demand_zone(price):
-    if int(price) % 13 == 0:
-        return {"signal": "SELL LIMIT", "entry": price + 2, "tp": price - 20, "sl": price + 10, "reasoning": "Supply zone rejection"}
+    # 16. Supply & Demand
+    if detect_supply_demand(resized):
+        logic_results.append("S/D Zone")
 
-def volume_surge_entry(price):
-    if int(price) % 14 == 0:
-        return {"signal": "BUY", "entry": price, "tp": price + 35, "sl": price - 20, "reasoning": "Volume surge breakout"}
+    # 17. VWAP Bounce
+    if detect_vwap_bounce(resized):
+        logic_results.append("VWAP")
 
-def candle_engulfing_signal(price):
-    if int(price) % 16 == 0:
-        return {"signal": "SELL", "entry": price, "tp": price - 25, "sl": price + 10, "reasoning": "Bearish engulfing confirmation"}
+    # 18. Trend Channel
+    if detect_trend_channel(resized):
+        logic_results.append("Trend Channel")
 
-def hammer_doji_confirmation(price):
-    if int(price) % 17 == 0:
-        return {"signal": "BUY", "entry": price + 1, "tp": price + 30, "sl": price - 15, "reasoning": "Hammer or Doji reversal"}
+    # 19. RSI Oversold/Overbought
+    if detect_rsi_extreme(resized):
+        logic_results.append("RSI Signal")
 
-def three_white_soldiers_crows(price):
-    if int(price) % 18 == 0:
-        return {"signal": "BUY", "entry": price, "tp": price + 40, "sl": price - 20, "reasoning": "Three White Soldiers detected"}
+    # 20. MACD Divergence
+    if detect_macd_divergence(resized):
+        logic_results.append("MACD Divergence")
 
-def inside_bar_breakout(price):
-    if int(price) % 19 == 0:
-        return {"signal": "SELL STOP", "entry": price - 1, "tp": price - 30, "sl": price + 10, "reasoning": "Inside bar breakout"}
+    # 21. Market Structure Shift
+    if detect_market_structure_shift(resized):
+        logic_results.append("Structure Shift")
 
-def tweezer_top_bottom(price):
-    if int(price) % 20 == 0:
-        return {"signal": "BUY", "entry": price, "tp": price + 35, "sl": price - 15, "reasoning": "Tweezer bottom reversal"}
+    # 22. POI Rejection
+    if detect_poi_reject(resized):
+        logic_results.append("POI Rejection")
 
-def morning_evening_star(price):
-    if int(price) % 21 == 0:
-        return {"signal": "SELL", "entry": price, "tp": price - 25, "sl": price + 15, "reasoning": "Evening star pattern"}
+    # 23. Breakout Candle
+    if detect_breakout_candle(resized):
+        logic_results.append("Breakout Candle")
 
-def triple_tap_pattern(price):
-    if int(price) % 22 == 0:
-        return {"signal": "BUY", "entry": price, "tp": price + 25, "sl": price - 10, "reasoning": "Triple Tap long setup"}
+    # 24. Price Compression
+    if detect_price_compression(resized):
+        logic_results.append("Price Compression")
 
-def head_shoulders_pattern(price):
-    if int(price) % 23 == 0:
-        return {"signal": "SELL", "entry": price, "tp": price - 35, "sl": price + 15, "reasoning": "Head and Shoulders confirmed"}
+    # 25. Stop Hunt
+    if detect_stop_hunt(resized):
+        logic_results.append("Stop Hunt")
 
-def cup_handle_breakout(price):
-    if int(price) % 24 == 0:
-        return {"signal": "BUY", "entry": price + 2, "tp": price + 40, "sl": price - 15, "reasoning": "Cup and Handle breakout"}
+    # 26. Order Flow Shift
+    if detect_order_flow_shift(resized):
+        logic_results.append("Order Flow Shift")
 
-def breakout_retreat_trap(price):
-    if int(price) % 25 == 0:
-        return {"signal": "SELL", "entry": price, "tp": price - 20, "sl": price + 10, "reasoning": "Breakout trap reversal"}
+    # 27. Round Number Trap
+    if detect_round_number_trap(resized):
+        logic_results.append("Round Number Trap")
 
-def trendline_touch_bounce(price):
-    if int(price) % 26 == 0:
-        return {"signal": "BUY LIMIT", "entry": price - 1, "tp": price + 20, "sl": price - 10, "reasoning": "Trendline support bounce"}
+    # 28. Session Timing Filter
+    if detect_session_timing(resized):
+        logic_results.append("Session Filter")
 
-def moving_average_retest(price):
-    if int(price) % 27 == 0:
-        return {"signal": "BUY", "entry": price, "tp": price + 30, "sl": price - 15, "reasoning": "MA retest signal"}
+    # 29. Spread Spike
+    if detect_spread_spike(resized):
+        logic_results.append("Spread Spike")
 
-def rsi_divergence(price):
-    if int(price) % 28 == 0:
-        return {"signal": "SELL", "entry": price, "tp": price - 30, "sl": price + 15, "reasoning": "RSI divergence spotted"}
+    # 30. W Pattern
+    if detect_w_pattern(resized):
+        logic_results.append("W Pattern")
 
-def macd_histogram_shift(price):
-    if int(price) % 29 == 0:
-        return {"signal": "BUY", "entry": price + 1, "tp": price + 35, "sl": price - 20, "reasoning": "MACD histogram flip"}
+    # 31. M Pattern
+    if detect_m_pattern(resized):
+        logic_results.append("M Pattern")
 
-def order_block_detection(price):
-    if int(price) % 30 == 0:
-        return {"signal": "SELL", "entry": price, "tp": price - 20, "sl": price + 10, "reasoning": "Order block rejection"}
+    # 32. Range Breakout
+    if detect_range_breakout(resized):
+        logic_results.append("Range Break")
 
-def market_structure_shift(price):
-    if int(price) % 31 == 0:
-        return {"signal": "BUY", "entry": price, "tp": price + 35, "sl": price - 20, "reasoning": "Market structure shift confirmed"}
+    # 33. OB+FVG Combo
+    if "OB" in logic_results and "FVG" in logic_results:
+        logic_results.append("OB+FVG Combo")
 
-def higher_highs_lows(price):
-    if int(price) % 32 == 0:
-        return {"signal": "BUY", "entry": price + 2, "tp": price + 40, "sl": price - 15, "reasoning": "Higher highs continuation"}
+    # 34. BOS+CHOCH Combo
+    if "BOS" in logic_results and "CHOCH" in logic_results:
+        logic_results.append("Structure Combo")
 
-def fair_value_gap_logic(price):
-    if int(price) % 33 == 0:
-        return {"signal": "BUY LIMIT", "entry": price - 2, "tp": price + 30, "sl": price - 15, "reasoning": "Fair Value Gap fill"}
+    # 35. Liquidity Sweep + OB
+    if "Liquidity Grab" in logic_results and "OB" in logic_results:
+        logic_results.append("Liquidity + OB")
 
-def smart_money_trap(price):
-    if int(price) % 34 == 0:
-        return {"signal": "SELL", "entry": price, "tp": price - 35, "sl": price + 20, "reasoning": "Smart money trap reversal"}
+    # 36. Safe + Aggressive + Scalping Mode Mix Logic (based on config)
+    from config import SAFE_MODE, AGGRESSIVE_MODE, SCALPING_MODE
+    if SAFE_MODE:
+        logic_results.append("Safe Mode Logic")
+    if AGGRESSIVE_MODE:
+        logic_results.append("Aggressive Mode Logic")
+    if SCALPING_MODE:
+        logic_results.append("Scalping Mode Logic")
 
-def liquidity_sweep_logic(price):
-    if int(price) % 35 == 0:
-        return {"signal": "SELL LIMIT", "entry": price + 3, "tp": price - 25, "sl": price + 10, "reasoning": "Liquidity grab at high"}
+    if logic_results:
+        return f"📈 *Trade Signal Detected*\nType: {decide_entry_type(logic_results)}\nTP: 100 pips\nSL: 35 pips\nReason: {' + '.join(logic_results)}\n\n🧠 Analysis Done By Ghost X99"
+    else:
+        return None
 
-def fractal_energy_signal(price):
-    if int(price) % 36 == 0:
-        return {"signal": "BUY", "entry": price + 1, "tp": price + 25, "sl": price - 15, "reasoning": "Fractal energy detected"}
+# Stub pattern matchers — you can replace with real OpenCV detection
+def detect_order_block(img): return avg_brightness(img) > 110
+def detect_fvg(img): return edge_density(img) > 0.15
+def detect_liquidity_grab(img): return brightness_variation(img) > 30
+def detect_breaker_block(img): return color_zone_check(img, 100, 180)
+def detect_trendline_break(img): return edge_count(img) > 120
+def detect_double_top_bottom(img): return True
+def detect_ema_cross(img): return False
+def detect_candlestick_pattern(img): return avg_brightness(img) < 90
+def detect_rejection_wick(img): return wick_shadow_check(img)
+def detect_inside_bar(img): return True
+def detect_bos(img): return True
+def detect_choch(img): return True
+def detect_fibonacci_zone(img): return True
+def detect_institutional_candle(img): return True
+def detect_imbalance(img): return True
+def detect_supply_demand(img): return True
+def detect_vwap_bounce(img): return True
+def detect_trend_channel(img): return True
+def detect_rsi_extreme(img): return True
+def detect_macd_divergence(img): return True
+def detect_market_structure_shift(img): return True
+def detect_poi_reject(img): return True
+def detect_breakout_candle(img): return True
+def detect_price_compression(img): return True
+def detect_stop_hunt(img): return True
+def detect_order_flow_shift(img): return True
+def detect_round_number_trap(img): return True
+def detect_session_timing(img): return True
+def detect_spread_spike(img): return True
+def detect_w_pattern(img): return True
+def detect_m_pattern(img): return True
+def detect_range_breakout(img): return True
+
+# === Helper Logic ===
+def avg_brightness(img):
+    return np.mean(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY))
+
+def edge_density(img):
+    edges = cv2.Canny(img, 100, 200)
+    return np.count_nonzero(edges) / edges.size
+
+def brightness_variation(img):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    return np.std(gray)
+
+def edge_count(img):
+    edges = cv2.Canny(img, 100, 200)
+    return np.count_nonzero(edges)
+
+def color_zone_check(img, min_val, max_val):
+    avg = np.mean(img)
+    return min_val < avg < max_val
+
+def wick_shadow_check(img):
+    return True  # Replace with vertical wick detection logic
+
+def decide_entry_type(logics):
+    if "OB+FVG Combo" in logics or "Structure Combo" in logics:
+        return "Buy Limit"
+    if "Liquidity + OB" in logics:
+        return "Sell Stop"
+    if "RSI Signal" in logics:
+        return "Scalp Buy"
+    if "MACD Divergence" in logics:
+        return "Buy"
+    return "Buy" if avg_brightness(img) > 100 else "Sell"
