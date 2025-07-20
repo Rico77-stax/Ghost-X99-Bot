@@ -2,5 +2,9 @@ services:
   - type: web
     name: ghost-x99-bot
     env: python
+    plan: free
+    runtime: python
     buildCommand: ""
-    startCommand: "python main.py"
+    startCommand: python main.py
+    region: frankfurt
+    pythonVersion: 3.10.8
