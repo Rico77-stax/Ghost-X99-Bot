@@ -2,10 +2,5 @@ services:
   - type: web
     name: ghost-x99-bot
     env: python
-    region: oregon
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: python main.py
-    runtime: python
-    branch: main
-    autoDeploy: true
+    buildCommand: ""
+    startCommand: "python main.py"
