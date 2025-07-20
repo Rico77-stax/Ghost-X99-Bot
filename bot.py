@@ -1,35 +1,30 @@
-from telegram import Update
-from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
-from config import BOT_TOKEN, GROUP_ID
+from telegram.ext import Updater, MessageHandler, Filters
 from signal_engine import process_image
 import os
-import asyncio
 
-async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_chat.id != GROUP_ID:
-        return
+BOT_TOKEN = "7974220853:AAE80t4o5-3UpZjRCaGDnnRcIMb0ZKbtXrk"
 
-    photo_file = await update.message.photo[-1].get_file()
-    image_path = "latest_chart.jpg"
+def handle_photo(update, context):
+    photo = update.message.photo[-1].get_file()
+    file_path = "latest_chart.jpg"
+    photo.download(file_path)
+
+    update.message.reply_text("📥 Image received. Running Ghost X99 sniper scan...")
+
+    signal = process_image(file_path)
     
-    if os.path.exists(image_path):
-        os.remove(image_path)
-
-    await photo_file.download_to_drive(image_path)
-    await asyncio.sleep(3)
-
-    signal = process_image(image_path)
     if signal:
-        await context.bot.send_message(chat_id=GROUP_ID, text=signal)
+        update.message.reply_text(f"✅ Signal Found:\n{signal}\n\nAnalysis Done By Ghost X99.")
     else:
-        await context.bot.send_message(
-            chat_id=GROUP_ID,
-            text="No sniper setup found. Drop another screenshot in 20 minutes.\n\n🧠 *Analysis Done By Ghost X99*",
-            parse_mode="Markdown"
-        )
+        update.message.reply_text("⚠️ No sniper setup found. Drop another chart after 20 minutes.\n\nAnalysis Done By Ghost X99.")
+
+    os.remove(file_path)
 
 def start_bot():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
-    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
-    print("🤖 Ghost X99 Bot is live!")
-    app.run_polling()
+    updater = Updater(BOT_TOKEN, use_context=True)
+    dp = updater.dispatcher
+
+    dp.add_handler(MessageHandler(Filters.photo, handle_photo))
+
+    updater.start_polling()
+    updater.idle()
