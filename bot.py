@@ -1,51 +1,35 @@
-# bot.py
+from telegram import Update
+from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
+from config import BOT_TOKEN, GROUP_ID
+from signal_engine import process_image
+import os
+import asyncio
 
-import logging
-from telegram import Update, InputFile
-from telegram.ext import (
-    ApplicationBuilder,
-    CommandHandler,
-    MessageHandler,
-    ContextTypes,
-    filters,
-)
+async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.id != GROUP_ID:
+        return
 
-from signal_engine import analyze_image_and_generate_signal
-from config import BOT_TOKEN
+    photo_file = await update.message.photo[-1].get_file()
+    image_path = "latest_chart.jpg"
+    
+    if os.path.exists(image_path):
+        os.remove(image_path)
 
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO
-)
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👻 Ghost X99 is online and ready!")
-
-async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    photo = update.message.photo[-1]
-    photo_file = await photo.get_file()
-    image_path = f"downloads/{photo.file_id}.jpg"
     await photo_file.download_to_drive(image_path)
+    await asyncio.sleep(3)
 
-    try:
-        signal, entry, tp, sl, marked_image_path = analyze_image_and_generate_signal(image_path)
-        with open(marked_image_path, "rb") as image_file:
-            await update.message.reply_photo(
-                photo=InputFile(image_file),
-                caption=f"""
-📡 Signal: {signal}
-🎯 Entry: {entry}
-✅ TP: {tp}
-❌ SL: {sl}
-"""
-            )
-    except Exception as e:
-        await update.message.reply_text(f"⚠️ Error processing image:\n{e}")
+    signal = process_image(image_path)
+    if signal:
+        await context.bot.send_message(chat_id=GROUP_ID, text=signal)
+    else:
+        await context.bot.send_message(
+            chat_id=GROUP_ID,
+            text="No sniper setup found. Drop another screenshot in 20 minutes.\n\n🧠 *Analysis Done By Ghost X99*",
+            parse_mode="Markdown"
+        )
 
 def start_bot():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
-
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.PHOTO, handle_image))
-
+    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    print("🤖 Ghost X99 Bot is live!")
     app.run_polling()
